@@ -1,0 +1,47 @@
+.TH SIMPLE_SHELL 1 "December 2025" "Holberton School" "User Commands"
+.SH NAME
+simple_shell \- a simple UNIX command interpreter
+
+.SH SYNOPSIS
+.B hsh
+
+.SH DESCRIPTION
+Simple Shell is a basic command-line interpreter written in C.
+It reads commands from standard input and executes them.
+
+The shell works in both interactive and non-interactive modes.
+
+.SH INVOCATION
+Interactive mode:
+.RS
+./hsh
+.RE
+
+Non-interactive mode:
+.RS
+echo "ls -l" | ./hsh
+.RE
+
+.SH BUILT-IN COMMANDS
+.TP
+.B exit
+Exit the shell.
+
+.TP
+.B env
+Print the current environment variables.
+
+.SH FEATURES
+- Executes commands found in the PATH
+- Handles command arguments
+- Handles EOF (Ctrl+D)
+- Error handling for invalid commands
+
+.SH RETURN VALUE
+Returns 0 on success, and non-zero on error.
+
+.SH AUTHOR
+Written by Holberton School students.
+
+.SH SEE ALSO
+sh(1), bash(1)
