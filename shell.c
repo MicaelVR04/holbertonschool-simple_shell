@@ -15,33 +15,30 @@ int main(void)
 	{
 		if (mode)
 			printf("#cisfun$ ");
-		if (getline(&input, &buffer_size, stdin) == -1) /* Reading the user input */
-		{
-			free(input);
-			break; /* Handling the eof (ctrl + D) */
-		}
-		count++;
-		if (input[strlen(input)] == '\n') /* Trim trailing the newline */
-			input[strlen(input)] = '\0';
-		args = parse_input(input); /* Tokenize the user input */
 
-		if (args == NULL)
+		if (getline(&input, &buffer_size, stdin) == -1)
+			break;
+
+		count++;
+
+		if (input[strlen(input) - 1] == '\n')
+			input[strlen(input) - 1] = '\0';
+
+		args = parse_input(input);
+		if (!args || !args[0])
 		{
-			free(input);
 			free(args);
 			continue;
 		}
-		if (args[0] != NULL)
-		{
-			comparator = env_fetch(args, input, count);
-			free(args);
-			if (comparator == 0)
-				continue;
-			else
-				break;
-		}
+
+		comparator = env_fetch(args, input, count);
 		free(args);
+
+		if (comparator == -1)
+			break;
 	}
+
+	free(input);
 	if (mode)
 		printf("\n");
 	return (0);
