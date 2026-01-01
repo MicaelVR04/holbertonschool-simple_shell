@@ -35,12 +35,8 @@ int main(void)
 		free(args);
 
 		if (comparator == -1)
-		{
-			free(input);
-			exit(0);
-		}
+			break;
 	}
 
 	free(input);
-	return (0);
-}
+	exit(0);
