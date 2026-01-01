@@ -10,24 +10,24 @@
 int env_fetch(char **args, char *input, int count)
 {
 	char **env = environ;
-	unsigned int i = 0;
+	int i = 0;
 
 	(void)input;
 
 	if (strcmp(args[0], "exit") == 0)
-	{
 		return (-1);
-	}
-	else if (strcmp(args[0], "env") == 0)
+
+	if (strcmp(args[0], "env") == 0)
 	{
-		while (env[i] != NULL)
+		while (env[i])
 		{
 			printf("%s\n", env[i]);
 			i++;
 		}
 		return (0);
 	}
-	else if (find_or_execute_command(args) == -1)
+
+	if (find_or_execute_command(args) == -1)
 	{
 		printf("./hsh: %d: %s: not found\n", count, args[0]);
 	}
@@ -118,7 +118,10 @@ int find_or_execute_command(char **args)
 	size_t len;
 
 	if (access(args[0], X_OK) == 0)
-		return (execute_command(args));
+	{
+		execute_command(args);
+		return (0);
+	}
 
 	path = _getenv("PATH");
 	if (!path)
@@ -147,6 +150,7 @@ int find_or_execute_command(char **args)
 		free(cmd);
 		dir = strtok(NULL, ":");
 	}
+
 	free(path_copy);
 	return (-1);
 }
