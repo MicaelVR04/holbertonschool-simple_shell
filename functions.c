@@ -1,29 +1,35 @@
 #include "shell.h"
 
 /**
- * env_fetch - Handle builtins and execute commands
- * @args: Array of command arguments
- * @input: User input string
- * @count: Command counter
+ * env_fetch - Handle built-in commands or execute external
+ * @args: Tokenized input
+ * @input: Raw input line
+ * @count: Command counter for errors
  *
- * Return: -1 if "exit" command, 0 otherwise
+ * Return: -1 if shell should exit, 0 otherwise
  */
 int env_fetch(char **args, char *input, int count)
 {
-	(void)input;
+	char **env = environ;
+	int i = 0;
 
 	if (strcmp(args[0], "exit") == 0)
-		return (-1);
+	{
+		free(input);
+		exit(0); /* Exit immediately */
+	}
 
 	if (strcmp(args[0], "env") == 0)
 	{
-		int i = 0;
-
-		while (environ[i])
-			printf("%s\n", environ[i++]);
+		while (env[i])
+		{
+			printf("%s\n", env[i]);
+			i++;
+		}
 		return (0);
 	}
 
+	/* Execute external command if found in PATH or absolute/relative */
 	if (find_or_execute_command(args) == -1)
 		printf("./hsh: %d: %s: not found\n", count, args[0]);
 
@@ -103,10 +109,10 @@ int execute_command(char **args)
 }
 
 /**
- * find_or_execute_command - Execute command from PATH if needed
- * @args: Array of command arguments
+ * find_or_execute_command - Execute command if it exists
+ * @args: Tokenized input
  *
- * Return: 0 if executed successfully, -1 if command not found
+ * Return: 0 if executed, -1 if not found
  */
 int find_or_execute_command(char **args)
 {
@@ -119,7 +125,7 @@ int find_or_execute_command(char **args)
 
 	path = _getenv("PATH");
 	if (!path || path[0] == '\0')
-		return (-1); /* Do NOT fork if PATH is empty */
+		return (-1); /* Do NOT fork if PATH empty */
 
 	copy = strdup(path);
 	if (!copy)
@@ -145,5 +151,5 @@ int find_or_execute_command(char **args)
 	}
 
 	free(copy);
-	return (-1); /* Command not found anywhere, fork not called */
+	return (-1); /* Command not found, fork NOT called */
 }
