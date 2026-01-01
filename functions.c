@@ -103,22 +103,23 @@ int execute_command(char **args)
 }
 
 /**
- * find_or_execute_command - Execute command using PATH if needed
+ * find_or_execute_command - Execute command from PATH if needed
  * @args: Array of command arguments
  *
  * Return: 0 if executed successfully, -1 if command not found
  */
 int find_or_execute_command(char **args)
 {
-	char *path = _getenv("PATH");
-	char *copy, *dir, *cmd;
+	char *path, *copy, *dir, *cmd;
 	size_t len;
 
+	/* Absolute or relative path */
 	if (access(args[0], X_OK) == 0)
 		return (execute_command(args));
 
-	if (!path)
-		return (-1);
+	path = _getenv("PATH");
+	if (!path || path[0] == '\0')
+		return (-1); /* Do NOT fork if PATH is empty */
 
 	copy = strdup(path);
 	if (!copy)
@@ -126,7 +127,8 @@ int find_or_execute_command(char **args)
 
 	for (dir = strtok(copy, ":"); dir; dir = strtok(NULL, ":"))
 	{
-		cmd = malloc(strlen(dir) + strlen(args[0]) + 2);
+		len = strlen(dir) + strlen(args[0]) + 2;
+		cmd = malloc(len);
 		if (!cmd)
 			continue;
 
@@ -143,5 +145,5 @@ int find_or_execute_command(char **args)
 	}
 
 	free(copy);
-	return (-1);
+	return (-1); /* Command not found anywhere, fork not called */
 }
