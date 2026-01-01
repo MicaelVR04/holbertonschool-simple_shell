@@ -1,76 +1,48 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-
-#define MAX_INPUT_SIZE 1024
-#define PROMPT "#cisfun$ "
-
+#include "shell.h"
 /**
- * execute_command - executes a command using execve
- * @command: command to execute
+ * main - Entry point, command line interptreter>
  *
- * Return: void
- */
-void execute_command(char *command)
-{
-	pid_t pid;
-	int status;
-
-	pid = fork();
-	if (pid == -1)
-	{
-		perror("Fork failed");
-		return;
-	}
-
-	if (pid == 0)
-	{
-		char *argv[] = {command, NULL};
-
-		if (execve(command, argv, environ) == -1)
-			perror(command);
-
-		exit(1);
-	}
-	else
-	{
-		waitpid(pid, &status, 0);
-	}
-}
-
-/**
- * main - entry point for simple shell
- *
- * Return: Always 0
+ * Return: Always 0 on (Success), Error cases on (Failure).
  */
 int main(void)
 {
-	char input[MAX_INPUT_SIZE];
+	char **args;
+	char *input = NULL;
+	size_t buffer_size = 0;
+	int count = 0, mode = isatty(STDIN_FILENO), comparator;
 
 	while (1)
 	{
-		printf("%s", PROMPT);
-
-		if (fgets(input, MAX_INPUT_SIZE, stdin) == NULL)
+		if (mode)
+			printf("#cisfun$ ");
+		if (getline(&input, &buffer_size, stdin) == -1) /* Reading the user input */
 		{
-			if (feof(stdin))
-			{
-				printf("\n");
-				break;
-			}
-			perror("Input error");
+			free(input);
+			break; /* Handling the eof (ctrl + D) */
+		}
+		count++;
+		if (input[strlen(input)] == '\n') /* Trim trailing the newline */
+			input[strlen(input)] = '\0';
+		args = parse_input(input); /* Tokenize the user input */
+
+		if (args == NULL)
+		{
+			free(input);
+			free(args);
 			continue;
 		}
-
-		/* Remove newline character */
-		input[strcspn(input, "\n")] = 0;
-
-		if (strlen(input) > 0)
-			execute_command(input);
+		if (args[0] != NULL)
+		{
+			comparator = env_fetch(args, input, count);
+			free(args);
+			if (comparator == 0)
+				continue;
+			else
+				break;
+		}
+		free(args);
 	}
-
+	if (mode)
+		printf("\n");
 	return (0);
 }
