@@ -6,15 +6,16 @@
  * @count: Fixed number.
  *
  * Return: -1 on (Failure), 0 on (Success).
-*/
+ */
 int env_fetch(char **args, char *input, int count)
 {
 	char **env = environ;
 	unsigned int i = 0;
 
+	(void)input;
+
 	if (strcmp(args[0], "exit") == 0)
 	{
-		free(input);
 		return (-1);
 	}
 	else if (strcmp(args[0], "env") == 0)
@@ -24,9 +25,12 @@ int env_fetch(char **args, char *input, int count)
 			printf("%s\n", env[i]);
 			i++;
 		}
+		return (0);
 	}
 	else if (find_or_execute_command(args) == -1)
+	{
 		printf("./hsh: %d: %s: not found\n", count, args[0]);
+	}
 
 	return (0);
 }
@@ -84,40 +88,23 @@ char **parse_input(char *input)
  */
 int execute_command(char **args)
 {
-	pid_t pid = fork();
+	pid_t pid;
+	int status;
 
+	pid = fork();
 	if (pid == -1)
-	{
-		perror("fork");
 		return (-1);
-	}
-	else if (pid == 0) /* Child Process */
-	{
-		if (execve(args[0], args, environ) == -1)
-		{
-			perror("execve");
-			exit(EXIT_FAILURE);
-		}
-	}
-	else /* Parent Process */
-	{
-		int status;
 
-		if (wait(&status) == -1)
-		{
-			perror("wait");
-			return (-1);
-		}
-		if (WIFEXITED(status)) /* Checks if child terminated normally */
-		{
-			return (WIFEXITED(status)); /* Return child process exit status */
-		}
-		else
-		{
-			return (-1);
-		}
+	if (pid == 0)
+	{
+		execve(args[0], args, environ);
+		exit(EXIT_FAILURE);
 	}
-	return (-1);
+	else
+	{
+		wait(&status);
+	}
+	return (0);
 }
 /**
  * find_or_execute_command - Checks the command input for execution.
@@ -127,36 +114,39 @@ int execute_command(char **args)
  */
 int find_or_execute_command(char **args)
 {
-	/* Checks if the command is a full path */
+	char *path, *path_copy, *dir, *cmd;
+	size_t len;
+
 	if (access(args[0], X_OK) == 0)
-	{
 		return (execute_command(args));
-	}
-	else
+
+	path = _getenv("PATH");
+	if (!path)
+		return (-1);
+
+	path_copy = strdup(path);
+	if (!path_copy)
+		return (-1);
+
+	dir = strtok(path_copy, ":");
+	while (dir)
 	{
-		/* Checks if the command exists in PATH */
-		char *path = _getenv("PATH");
-		char *path_copy = strdup(path);
-		char *dir = strtok(path_copy, ":");
+		len = strlen(dir) + strlen(args[0]) + 2;
+		cmd = malloc(len);
+		if (!cmd)
+			break;
 
-		while (dir != NULL)
+		sprintf(cmd, "%s/%s", dir, args[0]);
+		if (access(cmd, X_OK) == 0)
 		{
-			char *command_path = malloc(strlen(dir) + strlen(args[0]) + 2);
-
-			sprintf(command_path, "%s/%s", dir, args[0]);
-			if (access(command_path, X_OK) == 0)
-			{
-				args[0] = command_path; /* Updates the command with the full path */
-				execute_command(args);
-				free(command_path);
-				free(path_copy);
-				return (0); /* Command was found and executed successfully */
-			}
-			free(command_path);
-			dir = strtok(NULL, ":");
+			args[0] = cmd;
+			execute_command(args);
+			free(path_copy);
+			return (0);
 		}
-		free(path_copy);
-		return (-1); /* The command was not found in PATH*/
+		free(cmd);
+		dir = strtok(NULL, ":");
 	}
-	return (0); /* The command was found and executed successfully */
+	free(path_copy);
+	return (-1);
 }
