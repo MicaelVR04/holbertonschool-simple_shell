@@ -1,8 +1,8 @@
 #include "shell.h"
 /**
- * main - Entry point, command line interptreter>
+ * main - Entry point, command line interpreter
  *
- * Return: Always 0 on (Success), Error cases on (Failure).
+ * Return: Always 0 on success
  */
 int main(void)
 {
@@ -35,11 +35,12 @@ int main(void)
 		free(args);
 
 		if (comparator == -1)
-			break;
+		{
+			free(input);
+			exit(0);
+		}
 	}
 
 	free(input);
-	if (mode)
-		printf("\n");
 	return (0);
 }
