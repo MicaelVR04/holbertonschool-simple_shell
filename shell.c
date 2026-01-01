@@ -1,15 +1,18 @@
 #include "shell.h"
+
 /**
- * main - Entry point, command line interpreter
+ * run_shell - Core loop of the shell
+ * @mode: 1 if interactive, 0 if not
  *
- * Return: Always 0 on success
+ * Return: Always 0
  */
-int main(void)
+int run_shell(int mode)
 {
 	char **args;
 	char *input = NULL;
 	size_t buffer_size = 0;
-	int count = 0, mode = isatty(STDIN_FILENO), comparator;
+	int count = 0;
+	int comparator;
 
 	while (1)
 	{
@@ -35,8 +38,29 @@ int main(void)
 		free(args);
 
 		if (comparator == -1)
-			break;
+		{
+			free(input);
+			exit(0);
+		}
 	}
 
 	free(input);
-	exit(0);
+	return (0);
+}
+
+/**
+ * main - Entry point
+ *
+ * Return: Always 0
+ */
+int main(void)
+{
+	int mode = isatty(STDIN_FILENO);
+
+	run_shell(mode);
+
+	if (mode)
+		printf("\n");
+
+	return (0);
+}
