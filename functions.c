@@ -1,11 +1,12 @@
 #include "shell.h"
+
 /**
  * env_fetch - Verifies tokens.
  * @args: String of arguments given.
  * @input: User input string.
- * @count: Fixed number.
+ * @count: Command counter.
  *
- * Return: -1 on (Failure), 0 on (Success).
+ * Return: -1 on exit, 0 otherwise
  */
 int env_fetch(char **args, char *input, int count)
 {
@@ -34,11 +35,12 @@ int env_fetch(char **args, char *input, int count)
 
 	return (0);
 }
+
 /**
- * _getenv - Finds the environment.
- * @name: Name of the environment variable.
+ * _getenv - Finds the value of an environment variable.
+ * @name: Name of the variable.
  *
- * Return: The value after '=' (Success), NULL (Failure).
+ * Return: Pointer to value string, or NULL if not found
  */
 char *_getenv(const char *name)
 {
@@ -48,16 +50,17 @@ char *_getenv(const char *name)
 	while (*env != NULL)
 	{
 		if (strncmp(*env, name, length) == 0 && (*env)[length] == '=')
-			return (&(*env)[length + 1]); /* Return the value after '=' */
+			return (&(*env)[length + 1]);
 		env++;
 	}
-	return (NULL); /* Environment variable not found */
+	return (NULL);
 }
+
 /**
- * parse_input - Analyzes the user input and tokenizes it.
+ * parse_input - Tokenizes user input into arguments.
  * @input: User input string.
  *
- * Return: Array of tokens.
+ * Return: Array of strings (tokens)
  */
 char **parse_input(char *input)
 {
@@ -70,6 +73,7 @@ char **parse_input(char *input)
 		perror("malloc");
 		exit(EXIT_FAILURE);
 	}
+
 	token = strtok(input, " \n");
 	while (token != NULL && number_of_arguments < MAX_ARGS - 1)
 	{
@@ -78,13 +82,15 @@ char **parse_input(char *input)
 		number_of_arguments++;
 	}
 	arguments[number_of_arguments] = NULL;
+
 	return (arguments);
 }
+
 /**
- * execute_command - Forks process, executes a command and waits if necessary.
- * @args: Array of tokens with command and arguments.
+ * execute_command - Forks and executes a command.
+ * @args: Array of arguments
  *
- * Return: -1 on fork (Failure), 0 on (Success).
+ * Return: -1 on fork failure, 0 otherwise
  */
 int execute_command(char **args)
 {
@@ -106,22 +112,22 @@ int execute_command(char **args)
 	}
 	return (0);
 }
+
+/* Prototype for helper in helpers.c */
+int execute_in_path(char *dir, char **args, char *path_copy);
+
 /**
- * find_or_execute_command - Checks the command input for execution.
- * @args: Array of tokens with args[0] being the command.
+ * find_or_execute_command - Checks PATH and executes command if found.
+ * @args: Command and arguments array
  *
- * Return: -1 if the command is found (Success), 0 if not found (Failure).
+ * Return: 0 if executed, -1 if not found
  */
 int find_or_execute_command(char **args)
 {
-	char *path, *path_copy, *dir, *cmd;
-	size_t len;
+	char *path, *path_copy, *dir;
 
 	if (access(args[0], X_OK) == 0)
-	{
-		execute_command(args);
-		return (0);
-	}
+		return (execute_command(args));
 
 	path = _getenv("PATH");
 	if (!path)
@@ -134,20 +140,9 @@ int find_or_execute_command(char **args)
 	dir = strtok(path_copy, ":");
 	while (dir)
 	{
-		len = strlen(dir) + strlen(args[0]) + 2;
-		cmd = malloc(len);
-		if (!cmd)
-			break;
-
-		sprintf(cmd, "%s/%s", dir, args[0]);
-		if (access(cmd, X_OK) == 0)
-		{
-			args[0] = cmd;
-			execute_command(args);
-			free(path_copy);
+		if (execute_in_path(dir, args, path_copy) == 0)
 			return (0);
-		}
-		free(cmd);
+
 		dir = strtok(NULL, ":");
 	}
 
