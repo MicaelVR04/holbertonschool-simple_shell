@@ -1,22 +1,25 @@
 #include "shell.h"
 
+int last_status = 0;
+
 /**
- * env_fetch - Handle built-in commands or execute external
- * @args: Tokenized input
- * @input: Raw input line
- * @count: Command counter for errors
- *
- * Return: -1 if shell should exit, 0 otherwise
- */
+	* env_fetch - Handle built-in commands or execute external
+	* @args: Tokenized input
+	* @input: Raw input line
+	* @count: Command counter for errors
+	*
+	* Return: -1 if shell should exit, 0 otherwise
+	*/
 int env_fetch(char **args, char *input, int count)
 {
 	char **env = environ;
 	int i = 0;
 
+	(void)input;
+
 	if (strcmp(args[0], "exit") == 0)
 	{
-		free(input);
-		exit(0); /* Exit immediately */
+		return (-1);
 	}
 
 	if (strcmp(args[0], "env") == 0)
@@ -31,17 +34,20 @@ int env_fetch(char **args, char *input, int count)
 
 	/* Execute external command if found in PATH or absolute/relative */
 	if (find_or_execute_command(args) == -1)
-		printf("./hsh: %d: %s: not found\n", count, args[0]);
+	{
+		fprintf(stderr, "./hsh: %d: %s: not found\n", count, args[0]);
+		last_status = 127;
+	}
 
 	return (0);
 }
 
 /**
- * _getenv - Get value of environment variable
- * @name: Name of the environment variable
- *
- * Return: Pointer to value string, or NULL if not found
- */
+	* _getenv - Get value of environment variable
+	* @name: Name of the environment variable
+	*
+	* Return: Pointer to value string, or NULL if not found
+	*/
 char *_getenv(const char *name)
 {
 	size_t len = strlen(name);
@@ -58,11 +64,11 @@ char *_getenv(const char *name)
 }
 
 /**
- * parse_input - Tokenize user input into arguments
- * @input: User input string
- *
- * Return: Array of string tokens
- */
+	* parse_input - Tokenize user input into arguments
+	* @input: User input string
+	*
+	* Return: Array of string tokens
+	*/
 char **parse_input(char *input)
 {
 	char **args = malloc(MAX_ARGS * sizeof(char *));
@@ -84,11 +90,11 @@ char **parse_input(char *input)
 }
 
 /**
- * execute_command - Fork and execute a command
- * @args: Array of command arguments
- *
- * Return: -1 if fork fails, 0 otherwise
- */
+	* execute_command - Fork and execute a command
+	* @args: Array of command arguments
+	*
+	* Return: -1 if fork fails, 0 otherwise
+	*/
 int execute_command(char **args)
 {
 	pid_t pid = fork();
@@ -103,24 +109,32 @@ int execute_command(char **args)
 		exit(EXIT_FAILURE);
 	}
 
-	wait(&status);
+	if (wait(&status) == -1)
+		return (-1);
+
+	if (WIFEXITED(status))
+		last_status = WEXITSTATUS(status);
+	else if (WIFSIGNALED(status))
+		last_status = 128 + WTERMSIG(status);
+	else
+		last_status = status;
 
 	return (0);
 }
 
 /**
- * find_or_execute_command - Execute command if it exists
- * @args: Tokenized input
- *
- * Return: 0 if executed, -1 if not found
- */
+	* find_or_execute_command - Execute command if it exists
+	* @args: Tokenized input
+	*
+	* Return: 0 if executed, -1 if not found
+	*/
 int find_or_execute_command(char **args)
 {
 	char *path, *copy, *dir, *cmd;
 	size_t len;
 
-	/* Absolute or relative path */
-	if (access(args[0], X_OK) == 0)
+	/* Absolute or relative path: only treat as path if it contains '/' */
+	if (strchr(args[0], '/') && access(args[0], X_OK) == 0)
 		return (execute_command(args));
 
 	path = _getenv("PATH");
@@ -151,5 +165,5 @@ int find_or_execute_command(char **args)
 	}
 
 	free(copy);
-	return (-1); /* Command not found, fork NOT called */
+	return (-1);
 }
