@@ -39,13 +39,12 @@ int run_shell(int mode)
 
 		if (comparator == -1)
 		{
-			free(input);
-			exit(0);
+			break;
 		}
 	}
 
 	free(input);
-	return (0);
+	return (last_status);
 }
 
 /**
@@ -57,10 +56,10 @@ int main(void)
 {
 	int mode = isatty(STDIN_FILENO);
 
-	run_shell(mode);
+	int status = run_shell(mode);
 
 	if (mode)
 		printf("\n");
 
-	return (0);
+	return (status);
 }
