@@ -15,6 +15,7 @@ char **parse_input(char *input);
 int execute_command(char **args);
 int find_or_execute_command(char **args);
 int env_fetch(char **args, char *input, int count);
+extern int last_status;
 extern char **environ;
 
 #endif /* SHELL_H */
